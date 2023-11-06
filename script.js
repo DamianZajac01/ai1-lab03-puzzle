@@ -1,8 +1,6 @@
-// bugi:
-// 1. dziwny margin/padding miedzy puzzlami na dole
-
 class Index {
-    constructor(i, j) {
+    constructor(id, i, j) {
+        this.id = id;
         this.i = i;
         this.j = j;
     }
@@ -19,7 +17,7 @@ function shuffleArray(array) {
 
 function getLocation() {
     if (! navigator.geolocation) {
-        alert("Sorry, no geolocation available for you!");
+        alert("Nie można kontynuować bez zgody na udostępnienie lokalizacji");
     }
 
     navigator.geolocation.getCurrentPosition((position) => {
@@ -34,7 +32,7 @@ function getLocation() {
         longitude = position.coords.longitude;
 
         map.panTo(new L.LatLng(latitude, longitude));
-        let marker = L.marker([latitude, longitude]).addTo(map);
+        L.marker([latitude, longitude]).addTo(map);
 
     }, (positionError) => {
         console.error(positionError);
@@ -48,32 +46,27 @@ document.getElementById("saveButton").addEventListener("click", function() {
     leafletImage(map, function (err, canvas) {
         let mapWidth = map.getSize().x;
         let mapHeight = map.getSize().y;
-        let puzzleWidth = mapWidth / 4; // Dla 4x4 siatki
+        let puzzleWidth = mapWidth / 4;
         let puzzleHeight = mapHeight / 4;
 
         let counter = 0;
 
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
-                indexArray.push(new Index(i, j));
+                indexArray.push(new Index(counter++, i, j));
             }
         }
 
         shuffleArray(indexArray);
 
+        counter = 0;
         for (let i = 0; i < 4; i++) {
             for (let j = 0; j < 4; j++) {
-
-                // aby zapewnic losowsc moge zrobic tak ze dodam najpierw te elemety do jakiejs tablicy
-                // a potem losowo wybierajac z tablicy bede je appendowac jako childy do wyswietlenia
-                // jednoczesnie usuwajac z tablicy zaappendowane elementy
-
-                // (zrobic obiekty ktore maja i, j jako indeksy (?) i je uzywac losowo)
-
                 let rasterMap = document.createElement("canvas");
+                let index = indexArray[counter++];
 
                 rasterMap.draggable = true;
-                rasterMap.id = `item-${counter}`;
+                rasterMap.id = `item-${index.id}`;
                 rasterMap.style.width = puzzleWidth + "px";
                 rasterMap.style.height = puzzleHeight + "px";
 
@@ -84,115 +77,102 @@ document.getElementById("saveButton").addEventListener("click", function() {
 
                 document.body.appendChild(rasterMap);
 
-                console.log(`${counter}: ${i}, ${j}`);
-
                 let rasterContext = rasterMap.getContext("2d");
-                // rasterContext.drawImage(canvas, (puzzleWidth * i), (puzzleHeight * j), puzzleWidth, puzzleHeight, 0, 0, puzzleWidth, puzzleHeight);
 
-                let index = indexArray[counter++];
-                rasterContext.drawImage(canvas, (puzzleWidth * index.i), (puzzleHeight * index.j), puzzleWidth, puzzleHeight, 0, 0, puzzleWidth, puzzleHeight);
+                rasterContext.drawImage(canvas, (puzzleWidth * index.j), (puzzleHeight * index.i), puzzleWidth, puzzleHeight, 0, 0, puzzleWidth, puzzleHeight);
             }
         }
-    });
 
-    setTimeout(addDraggableFunction, 10000);
-    //addDraggableFunction();
+        addDraggableFunction();
+    });
 });
 
 function addDraggableFunction() {
+    let mainTarget = document.getElementById("main-drag-target");
+
     let items = document.querySelectorAll("canvas");
     for (let item of items) {
         item.addEventListener("dragstart", function (event) {
             this.style.border = "5px dashed #D8D8FF";
             event.dataTransfer.setData("text", this.id);
-            console.log(event.dataTransfer.getData("text"));
         });
 
         item.addEventListener("dragend", function (event) {
             this.style.borderWidth = "0";
         });
+
+        let target = document.createElement("div");
+        target.draggable = true;
+        target.style.height = item.style.height;
+        target.style.width = item.style.width;
+        target.style.backgroundColor = "red";
+        target.style.border = "1px solid black"
+        target.classList.add("drag-target");
+        mainTarget.appendChild(target);
     }
 
-    let target = document.getElementById("drag-target");
-    target.addEventListener("dragenter", function (event) {
-        this.style.border = "2px solid #7FE9D9";
-    });
-    target.addEventListener("dragleave", function (event) {
-        this.style.border = "2px dashed #7f7fe9";
-    });
-    target.addEventListener("dragover", function (event) {
-        event.preventDefault();
-    });
-    target.addEventListener("drop", function (event) {
-        let myElement = document.querySelector("#" + event.dataTransfer.getData("text"));
-        this.appendChild(myElement)
-        this.style.border = "2px dashed #7f7fe9";
-    }, false);
-}
+    let targets = document.getElementsByClassName("drag-target");
+    for (let target of targets) {
 
-function splitMap() {
-    let layers = [];
-    map.eachLayer( function(layer) {
-        if( layer instanceof L.TileLayer ) {
-            layers.push(layer);
-        }
-    } );
+        target.addEventListener("dragenter", function (event) {
+            this.style.border = "2px solid #7FE9D9";
+        });
 
-    console.log(layers.length);
-    console.log(layers);
+        target.addEventListener("dragleave", function (event) {
+            this.style.border = "1px solid black";
+            const hasCanvas = target.querySelector('canvas');
+            if (hasCanvas) {
+                this.style.borderWidth = "0";
+            }
+        });
 
-    let mapWidth = map.getSize().x;
-    let mapHeight = map.getSize().y;
-    let puzzleWidth = mapWidth / 4; // Dla 4x4 siatki
-    let puzzleHeight = mapHeight / 4;
+        target.addEventListener("dragover", function (event) {
+            event.preventDefault();
+        });
 
-    // let puzzleWidth = mapWidth; // Dla 4x4 siatki
-    // let puzzleHeight = mapHeight;
+        target.addEventListener("drop", function (event) {
+            let myElement = document.querySelector("#" + event.dataTransfer.getData("text"));
+            this.appendChild(myElement)
+            this.style.borderWidth = "0";
 
-    document.getElementById("puzzle-container").innerHTML = "";
+            isSolved(mainTarget);
 
-    let x = Math.floor((longitude + 180) / 360 * Math.pow(2, zoom)); // Obliczenie wartości x
-    let y = Math.floor((1 - Math.log(Math.tan(latitude * Math.PI / 180) + 1 / Math.cos(latitude * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)); // Obliczenie wartości y
-    let url = 'https://' + subdomain + '.tile.openstreetmap.org/' + zoom + '/' + x + '/' + y + '.png';
-
-
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-
-
-            let puzzle = document.createElement("div");
-            puzzle.className = "map-puzzle";
-            puzzle.style.width = puzzleWidth + "px";
-            puzzle.style.height = puzzleHeight + "px";
-            puzzle.style.backgroundImage = `url(${url})`; // Ustaw obraz mapy jako tło
-
-            puzzle.style.backgroundPosition = "-" + j * puzzleWidth + "px -" + i * puzzleHeight + "px"; // Ustaw pozycję tła
-            document.getElementById("map-puzzle-container").appendChild(puzzle);
-
-            console.log(url);
-
-        }
+        }, false);
     }
 }
 
-let latitude = 51.505; // Przykładowe współrzędne
+function isSolved(mainTarget) {
+    let canvas = mainTarget.querySelectorAll(".drag-target canvas");
+
+    if (canvas.length !== 16) {
+        return;
+    }
+
+    let counter = 0;
+    for (let cnvs of canvas) {
+        let id = cnvs.id;
+
+        console.log(`item-${counter}` === id);
+        if (`item-${counter}` !== id) {
+            return;
+        }
+        counter++;
+    }
+
+    setTimeout(winInfo, 500);
+}
+
+function winInfo() {
+    alert("Wygrałeś!");
+}
+
+let latitude = 51.505;
 let longitude = -0.09;
-let zoom = 12; // Przykładowy poziom przybliżenia
-let subdomain = 'c'; // Możesz wybrać subdomenę (a, b, c)
+let zoom = 16;
 
 let map = L.map('map').setView([latitude, longitude], zoom);
-// let layer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-//     maxZoom: 18,
-//     renderer: L.canvas() // to dodalem
-// });
-
 L.tileLayer.provider('Esri.WorldImagery').addTo(map);
-// layer.addTo(map);
 
 map.on('zoom', ({ target }) => {
     zoom = target.getZoom();
 });
-
-// map.on('zoomend', ({ target }) => {
-//     console.log(target.getZoom());
-// });

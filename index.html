@@ -6,65 +6,22 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <link rel="stylesheet" href="styles.css">
+
     <link rel="stylesheet" href="leaflet-1.7.1/leaflet.css" />
     <script src="leaflet-1.7.1/leaflet-src.js"></script>
     <script src="leaflet-1.7.1/leaflet-providers.js"></script>
     <script src="leaflet-1.7.1/leaflet-image.js"></script>
 
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        #map {
-            height: 500px;
-            width: 49%;
-            border: 1px solid black;
-            /*grid-area: map;*/
-        }
-
-        /*.rasterMap {*/
-        /*    !*width: 12.25%;*!*/
-        /*    !*height: 125px;*!*/
-        /*    !*border: 1px solid black*!*/
-        /*}*/
-
-        #drag-target {
-            height: 500px;
-            width: 49%;
-            border: 1px solid black;
-            /*grid-area: puzzle;*/
-            position: absolute;
-            top: 9px;
-            right: 6px;
-            padding: 0;
-        }
-
-        /*.draggable {*/
-
-        /*}*/
-
-
-        /*body {*/
-        /*    position: relative;*/
-        /*    display: grid;*/
-        /*    grid-template-columns: 1fr 1fr;*/
-        /*    grid-template-rows: 1fr;*/
-        /*    grid-template-areas:*/
-        /*    "map puzzle"*/
-        /*    ;*/
-        /*}*/
-    </style>
 </head>
 
 <body>
     <div id="map"></div>
 
-    <button id="getLocation" onclick="getLocation()">Get Location</button>
-    <button id="saveButton">Save Raster Map</button>
+    <button id="getLocation" onclick="getLocation()">Moja lokalizacja</button>
+    <button id="saveButton">Pobierz mapę</button>
 
-    <div id="drag-target"></div>
+    <div id="main-drag-target"></div>
 
     <br>
 <!--    <canvas class="rasterMap"></canvas>-->
