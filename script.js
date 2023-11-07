@@ -164,6 +164,21 @@ function isSolved(mainTarget) {
 
 function winInfo() {
     alert("Wygrałeś!");
+    notifyMe();
+}
+
+function notifyMe() {
+    if (!("Notification" in window)) {
+        alert("Przeglądarka nie obsługuje powiadomień");
+    } else if (Notification.permission === "granted") {
+        const notification = new Notification("Wygrałeś!");
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+                const notification = new Notification("Wygrałeś!!");
+            }
+        });
+    }
 }
 
 let latitude = 51.505;
